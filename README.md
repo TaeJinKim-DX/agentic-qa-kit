@@ -1,5 +1,10 @@
 # Agentic QA Kit
 
+![status](https://img.shields.io/badge/status-pilot-orange)
+![agents](https://img.shields.io/badge/agents-Claude%20Code%20·%20Codex%20·%20any-blue)
+![QA](https://img.shields.io/badge/QA-live%20·%20real%20data-brightgreen)
+![bindings](https://img.shields.io/badge/browser-interactive%20%2B%20Playwright-8A2BE2)
+
 **어떤 웹 프로젝트든, AI 에이전트에게 폴더 하나를 주고 "시작해"라고 하면 — 사람이 하듯 브라우저로 라이브 QA를 수행하게 만드는 공용 템플릿.**
 
 에이전트(Claude Code · Codex 등 무엇이든)가 이 킷만 읽고 **프로젝트 자동 분석 → 꼭 필요한 것만 질문 → QA 산출물(케이스·스크립트·런북) 생성 → 유인 1차 실행 → 자가개선 → (허가 시) 무인 운용**까지 이끕니다.
@@ -73,11 +78,11 @@ agentic-qa-kit/
 | 설계 완결성·내부 정합성 | ✅ 다중 렌즈 검토로 검증 |
 | P0 발견 · P2 산출물 생성(코드 기반) | ✅ 실 프로젝트 도그푸딩으로 실증 |
 | P3 유인 실행 · 증거·redaction · 정리검증 | ✅ 라이브 실증(실 시스템에 케이스 구동, 시크릿 마스킹 확인) |
-| Playwright 바인딩(비-대화형 에이전트) | ⏳ 미실증 — 파일럿에서 검증 예정 |
-| P5 무인 스케줄링 기계 | ⏳ 미실증 |
-| 비전공자 실사용 | ⏳ 미실증 |
+| 브라우저 두 바인딩(대화형 + Playwright) | ✅ 양쪽 실증 — 실 페이지 구동·네트워크 증거·스크린샷·redaction 동등 산출 |
+| P5 무인 스케줄링 기계(cron·킬스위치·에스컬레이션) | ⏳ 미실증 — 파일럿에서 검증 예정 |
+| 비전공자 실사용 | ⏳ 미실증 — 파일럿에서 검증 예정 |
 
-→ 실 프로젝트 파일럿(비전공자 1명 포함)으로 남은 항목을 검증하는 것이 다음 단계입니다.
+→ 실 프로젝트 파일럿(비전공자 1명 포함)으로 남은 2항목을 검증하면 정식 배포(GA) 자격이 됩니다.
 
 ---
 
