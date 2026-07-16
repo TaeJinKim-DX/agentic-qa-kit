@@ -1,0 +1,94 @@
+# =============================================================================
+# qa-config.yaml — TeamBoard 라이브 QA 계약 (예시 — 가상 프로젝트, example/README.md)
+# -----------------------------------------------------------------------------
+# templates/qa-config.template.yaml 을 채운 모습. [게이트1] 2026-07-07 승인으로 확정.
+# 시크릿 실값 없음 — *_secret_ref / secret_ref 는 gitignored .env.qa 의 키 이름이다(원칙 6).
+# 확정 후 변경도 게이트를 거친다(원칙 10) — 에이전트가 임의 수정 금지.
+# =============================================================================
+
+meta:
+  kit_version: "v0.5.0"                         # 킷 CHANGELOG.md 최신과 대조(드리프트 감지)
+  config_schema_version: "1"
+  project_name: "teamboard"
+  created: "2026-07-07"
+
+environments:
+  stage:
+    base_url: "https://stage.teamboard.example"
+    grade: stage
+    account_secret_ref: QA_MEMBER_CRED          # 기본 계정 = member 역할(auth.roles 와 동일 키)
+    unattended_allowed: true
+    data_boundary: "board:test-board 안 + qa- 접두 리소스만. 파일 실물은 스토리지 테스트 버킷(tb-qa-bucket) 한정"
+    fingerprint:                                # 런타임 환경 신원 검증 — prod 오인 차단. P0 발견(discovery-report.md §4): /api/health 응답의 env 필드
+      health_path: "/api/health"
+      expect:
+        env: "stage"
+  # prod 는 이번 범위에서 미등록 — 등록 시 grade: prod / unattended_allowed: false /
+  # data_boundary: "생성 금지(읽기전용)" 강제(templates/qa-config.template.yaml 주석 참조)
+
+timezone:
+  storage: "UTC"                                # P0 발견: timestamptz + 서버 TZ=UTC
+  display: "Asia/Seoul"                         # storage 와 다름 → 시간 경계 케이스(E) 의무 — E-01
+
+data:
+  test_prefix: "qa-"                            # run-id 병기(patterns/seeding.md 명명 규약)
+  deny_list:
+    - "board:general"                           # 전사 실사용 보드 — 불가침
+    - "storage-bucket:tb-prod-files"            # 실서비스 파일 버킷 — 테스트 버킷 외 접근 금지
+    - "user:role=admin(실계정)"                  # 실관리자 계정 — 역할 변경 대상 금지
+  cleanup_method: soft                          # 테스트 데이터 정리 방식 — 프로젝트 삭제 정책(deleted_at soft-delete, CL-05)을 따름
+  retention:
+    softdelete_purge: "30d"                     # CL-05 회신: 운영 purge 배치 30일 주기
+    runs_keep: 20
+
+auth:
+  roles:
+    - name: admin                               # qa/.auth/admin.state.json 의 <role>
+      login_method: sso                         # 사내 SSO — 자동화하지 않는다. 유인 로그인 후 세션 저장
+      secret_ref: QA_ADMIN_CRED
+      session_lifetime: "12h"                   # P0 발견: 세션 쿠키 tb-tok-* 수명 12h
+    - name: member
+      login_method: sso
+      secret_ref: QA_MEMBER_CRED
+      session_lifetime: "12h"
+  concurrent_session_policy: single             # 테스트 계정 공유 가능성 — 보수적으로 single
+
+risk:
+  irreversible_actions:                         # P0 초안(discovery-report.md §4) → [게이트1] 확정
+    - "DELETE /api/files/*/purge"               # 파일 영구삭제 — 스토리지 객체까지 복구 불가
+    - "POST /api/notifications/announce"        # 전체 공지 발송 — 전 구성원 메일, 회수 불가
+    - "PATCH /api/users/*/role"                 # 역할 변경 — 실계정 오염 위험
+    - "「영구 삭제」 버튼"                        # UI 휴리스틱(대화형 경로 클릭 전 검사)
+    - "「전체 공지 발송」 버튼"
+  budget_per_run:
+    external_calls: 100
+    resource_creations: 20
+
+scope:
+  priority_features:                            # 기능마다 A·B·D 최소 1케이스(phases/P2-artifacts.md)
+    - "게시글"
+    - "댓글"
+    - "파일 공유"
+  excluded:
+    - "알림 발송"                                # deny-list 부작용(전 구성원 메일) — 검증 범위 밖
+    - "관리 콘솔"                                # 2차 범위([게이트2] 공동제작 루프에서 제외 합의)
+  case_cap: 40
+
+ops:
+  schedule:
+    approved: false                             # 이 예시 시점(P3)에는 [게이트4] 미상정 — false 고정
+    cadence: ""
+    window: ""
+    env: ""
+    trigger_method: ""
+  failure_policy: "연속 2회 실패 시 중단+통보"
+  notify:
+    channel: file                               # 리포트 파일만 — 푸시 채널 미사용
+    ack_hours: 24
+  # 런타임 안전장치(러너가 강제하는 계약 — 참조용):
+  #   킬스위치 = qa/.stop / 실행 락 = qa/.lock(stale 판정 30분)
+
+secret_patterns:                                # Authorization/Cookie 헤더 제거는 기본 내장
+  - "(?i)(token|secret|password|api[_-]?key)"
+  - "tb-tok-[A-Za-z0-9]{24}"                    # TeamBoard 세션 토큰 형식(P0 발견)
+  - "stg-key-[A-Za-z0-9]{32}"                   # 스토리지 API 키 형식(P0 발견)

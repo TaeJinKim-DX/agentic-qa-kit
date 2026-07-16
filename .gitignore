@@ -1,0 +1,13 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+# 사용처(각 프로젝트)에서 생기는 것 — 템플릿엔 없어야 하지만 방어
+node_modules/
+qa/.env.qa
+qa/.auth/
+qa/.lock
+qa/.stop
+qa/runs/
